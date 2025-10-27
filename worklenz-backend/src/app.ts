@@ -20,7 +20,6 @@ import public_router from "./routes/public";
 import { isInternalServer, isProduction } from "./shared/utils";
 import sessionMiddleware from "./middlewares/session-middleware";
 import safeControllerFunction from "./shared/safe-controller-function";
-import AwsSesController from "./controllers/aws-ses-controller";
 import { CSP_POLICIES } from "./shared/csp";
 
 const app = express();
@@ -155,9 +154,7 @@ app.get("/csrf-token", (req: Request, res: Response) => {
 });
 
 // Webhook endpoints (no CSRF required)
-app.post("/webhook/emails/bounce", safeControllerFunction(AwsSesController.handleBounceResponse));
-app.post("/webhook/emails/complaints", safeControllerFunction(AwsSesController.handleComplaintResponse));
-app.post("/webhook/emails/reply", safeControllerFunction(AwsSesController.handleReplies));
+// AWS SES webhook endpoints removed - now using native SMTP
 
 // Static file serving
 if (isProduction()) {

@@ -1,11 +1,25 @@
-import {SendEmailCommand, SESClient} from "@aws-sdk/client-ses";
+import nodemailer from "nodemailer";
 import {Validator} from "jsonschema";
 import {QueryResult} from "pg";
 import {log_error, isValidateEmail} from "./utils";
 import emailRequestSchema from "../json_schemas/email-request-schema";
 import db from "../config/db";
 
-const sesClient = new SESClient({region: process.env.AWS_REGION});
+// Initialize SMTP transporter with configuration from environment variables
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: parseInt(process.env.SMTP_PORT || "587", 10),
+  secure: process.env.SMTP_SECURE === "true", // true for 465, false for other ports
+  requireTLS: true, // Enforce TLS encryption
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASSWORD
+  },
+  // Optional: Connection timeout and socket timeout
+  connectionTimeout: 30000, // 30 seconds
+  greetingTimeout: 30000,
+  socketTimeout: 60000 // 60 seconds
+});
 
 export interface IEmail {
   to?: string[];
@@ -70,29 +84,16 @@ export async function sendEmail(email: IEmail): Promise<string | null> {
 
     if (!isValidMailBody(options)) return null;
 
-    const charset = "UTF-8";
-
-    const command = new SendEmailCommand({
-      Destination: {
-        ToAddresses: options.to
-      },
-      Message: {
-        Subject: {
-          Charset: charset,
-          Data: options.subject
-        },
-        Body: {
-          Html: {
-            Charset: charset,
-            Data: options.html
-          }
-        }
-      },
-      Source: "Worklenz <noreply@worklenz.com>"
+    // Send email using nodemailer with SMTP
+    const info = await transporter.sendMail({
+      from: process.env.SMTP_FROM || "Worklenz <noreply@worklenz.com>",
+      to: options.to.join(", "), // Convert array to comma-separated string
+      subject: options.subject,
+      html: options.html
     });
 
-    const res = await sesClient.send(command);
-    return res.MessageId || null;
+    // Return message ID (similar to AWS SES MessageId format)
+    return info.messageId || null;
   } catch (e) {
     log_error(e);
   }
