@@ -6666,3 +6666,134 @@ BEGIN
     END LOOP;
 END;
 $$;
+
+/**
+ * Registers or updates a Discord OAuth user
+ * Similar to register_google_user but for Discord authentication
+ * Handles team invitations and creates default organization/team structure
+ * 
+ * @param _body JSON object containing:
+ *   - id: Discord user ID
+ *   - email: User email from Discord
+ *   - displayName: Discord username
+ *   - avatar: Discord avatar URL/hash
+ *   - guilds: JSON array of guild IDs
+ *   - teamMember: Optional team member invitation ID
+ *   - team: Optional team ID for invitation
+ */
+CREATE OR REPLACE FUNCTION register_discord_user(_body json)
+RETURNS json AS $$
+DECLARE
+  _user_id UUID;
+  _user_email TEXT;
+  _discord_id TEXT;
+  _existing_user RECORD;
+  _organization_id UUID;
+  _team_id UUID;
+  _team_name TEXT;
+  _default_timezone UUID;
+  _role_id UUID;
+BEGIN
+  _discord_id := TRIM(_body->>'id');
+  _user_email := LOWER(TRIM(_body->>'email'));
+  
+  -- Get default timezone (UTC)
+  SELECT id INTO _default_timezone FROM timezones WHERE name = 'UTC' LIMIT 1;
+  
+  -- Check for existing Discord user (not deleted)
+  SELECT * INTO _existing_user FROM users 
+  WHERE discord_id = _discord_id AND is_deleted = FALSE;
+  
+  IF _existing_user.id IS NOT NULL THEN
+    -- Update existing user with latest Discord data
+    UPDATE users SET
+      discord_username = TRIM(_body->>'displayName'),
+      discord_avatar = TRIM(_body->>'avatar'),
+      discord_guilds = COALESCE((_body->>'guilds')::jsonb, '[]'::jsonb),
+      updated_at = NOW()
+    WHERE id = _existing_user.id;
+    
+    RETURN json_build_object(
+      'id', _existing_user.id,
+      'email', _existing_user.email,
+      'name', _existing_user.name,
+      'discord_id', _discord_id
+    );
+  END IF;
+  
+  -- Check for email conflict with local/Google accounts (prevents OAuth conflicts)
+  SELECT * INTO _existing_user FROM users 
+  WHERE email = _user_email AND is_deleted = FALSE;
+  
+  IF _existing_user.id IS NOT NULL THEN
+    RAISE EXCEPTION 'EMAIL_EXISTS' USING HINT = _user_email;
+  END IF;
+  
+  -- Create new user with Discord OAuth
+  INSERT INTO users (
+    email,
+    name,
+    discord_id,
+    discord_username,
+    discord_avatar,
+    discord_guilds,
+    timezone_id,
+    setup_completed
+  ) VALUES (
+    _user_email,
+    TRIM(_body->>'displayName'),
+    _discord_id,
+    TRIM(_body->>'displayName'),
+    TRIM(_body->>'avatar'),
+    COALESCE((_body->>'guilds')::jsonb, '[]'::jsonb),
+    _default_timezone,
+    FALSE
+  ) RETURNING id INTO _user_id;
+  
+  -- Handle team invitation if provided
+  IF _body->>'teamMember' IS NOT NULL AND _body->>'teamMember' != '' THEN
+    -- Update existing team member invitation with new user
+    UPDATE team_members SET
+      user_id = _user_id
+    WHERE id = (_body->>'teamMember')::UUID;
+    
+    RETURN json_build_object(
+      'id', _user_id,
+      'email', _user_email,
+      'name', _body->>'displayName',
+      'discord_id', _discord_id
+    );
+  END IF;
+  
+  -- Create default organization
+  _team_name := CONCAT(TRIM(_body->>'displayName'), '''s Team');
+  
+  INSERT INTO organizations (name, user_id)
+  VALUES (_team_name, _user_id)
+  RETURNING id INTO _organization_id;
+  
+  -- Create default team
+  INSERT INTO teams (name, user_id, organization_id)
+  VALUES (_team_name, _user_id, _organization_id)
+  RETURNING id INTO _team_id;
+  
+  -- Set active team for user
+  UPDATE users SET active_team = _team_id WHERE id = _user_id;
+  
+  -- Create default roles for team
+  INSERT INTO roles (name, team_id, default_role) VALUES ('Member', _team_id, TRUE);
+  INSERT INTO roles (name, team_id, admin_role) VALUES ('Admin', _team_id, TRUE);
+  INSERT INTO roles (name, team_id, owner) VALUES ('Owner', _team_id, TRUE) RETURNING id INTO _role_id;
+  
+  -- Add user as team owner
+  INSERT INTO team_members (user_id, team_id, role_id)
+  VALUES (_user_id, _team_id, _role_id);
+  
+  RETURN json_build_object(
+    'id', _user_id,
+    'email', _user_email,
+    'name', _body->>'displayName',
+    'discord_id', _discord_id
+  );
+END;
+$$ LANGUAGE plpgsql;

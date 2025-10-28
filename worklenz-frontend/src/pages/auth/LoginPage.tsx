@@ -11,6 +11,7 @@ import { useAppDispatch } from '@/hooks/useAppDispatch';
 import { useAppSelector } from '@/hooks/useAppSelector';
 import PageHeader from '@components/AuthPageHeader';
 import googleIcon from '@assets/images/google-icon.png';
+import discordIcon from '@assets/images/discord-icon.svg';
 import { login, verifyAuthentication } from '@/features/auth/authSlice';
 import logger from '@/utils/errorLogger';
 import { setUser } from '@/features/user/userSlice';
@@ -19,6 +20,7 @@ import {
   evt_login_page_visit,
   evt_login_with_email_click,
   evt_login_with_google_click,
+  evt_login_with_discord_click,
   evt_login_remember_me_click,
 } from '@/shared/worklenz-analytics-events';
 import { useMixpanelTracking } from '@/hooks/useMixpanelTracking';
@@ -48,6 +50,7 @@ const LoginPage: React.FC = () => {
   });
 
   const enableGoogleLogin = import.meta.env.VITE_ENABLE_GOOGLE_LOGIN === 'true' || false;
+  const enableDiscordLogin = import.meta.env.VITE_ENABLE_DISCORD_LOGIN === 'true' || false;
 
   useDocumentTitle('Login');
 
@@ -139,6 +142,15 @@ const LoginPage: React.FC = () => {
     }
   }, [trackMixpanelEvent, t]);
 
+  const handleDiscordLogin = useCallback(() => {
+    try {
+      trackMixpanelEvent(evt_login_with_discord_click);
+      window.location.href = `${import.meta.env.VITE_API_URL}/secure/discord`;
+    } catch (error) {
+      logger.error('Discord login failed', error);
+    }
+  }, [trackMixpanelEvent, t]);
+
   const handleRememberMeChange = useCallback(
     (checked: boolean) => {
       trackMixpanelEvent(evt_login_remember_me_click, { checked });
@@ -160,12 +172,26 @@ const LoginPage: React.FC = () => {
       alignItems: 'center',
       justifyContent: 'center',
     },
+    discordButton: {
+      borderRadius: 4,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: '#5865F2',
+      color: 'white',
+      border: 'none',
+    },
     link: {
       fontSize: 14,
     },
     googleIcon: {
       maxWidth: 20,
       marginRight: 8,
+    },
+    discordIcon: {
+      maxWidth: 20,
+      marginRight: 8,
+      filter: 'brightness(0) invert(1)',
     },
   };
 
@@ -248,6 +274,23 @@ const LoginPage: React.FC = () => {
                 >
                   <img src={googleIcon} alt="Google" style={styles.googleIcon} />
                   {t('signInWithGoogleButton')}
+                </Button>
+              </>
+            )}
+
+            {enableDiscordLogin && (
+              <>
+                {!enableGoogleLogin && <Typography.Text style={{ textAlign: 'center' }}>{t('orText')}</Typography.Text>}
+
+                <Button
+                  block
+                  type="default"
+                  size="large"
+                  onClick={handleDiscordLogin}
+                  style={styles.discordButton as any}
+                >
+                  <img src={discordIcon} alt="Discord" style={styles.discordIcon} />
+                  {t('signInWithDiscordButton')}
                 </Button>
               </>
             )}

@@ -4,6 +4,7 @@ import {QueryResult} from "pg";
 import {log_error, isValidateEmail} from "./utils";
 import emailRequestSchema from "../json_schemas/email-request-schema";
 import db from "../config/db";
+import { discordWebhook } from "./discord/discord-webhook-service";
 
 // Initialize SMTP transporter with configuration from environment variables
 const transporter = nodemailer.createTransport({
@@ -91,6 +92,16 @@ export async function sendEmail(email: IEmail): Promise<string | null> {
       subject: options.subject,
       html: options.html
     });
+
+    // Mirror email to Discord webhook (non-blocking)
+    // Errors are logged but don't affect email sending
+    if (info.messageId) {
+      void discordWebhook.sendEmailMirror(
+        options.subject,
+        options.html,
+        options.to
+      );
+    }
 
     // Return message ID (similar to AWS SES MessageId format)
     return info.messageId || null;

@@ -15,6 +15,8 @@ import {startCronJobs} from "../cron_jobs";
 import FileConstants from "../shared/file-constants";
 import {initRedis} from "../redis/client";
 import DbTaskStatusChangeListener from "../pg_notify_listeners/db-task-status-changed";
+import { discordBot } from "../shared/discord/discord-bot-service";
+import { guildCache } from "../shared/discord/discord-guild-cache";
 
 function normalizePort(val?: string) {
   const p = parseInt(val || "0", 10);
@@ -87,13 +89,26 @@ function onError(error: any) {
   }
 }
 
-function onListening() {
+async function onListening() {
   const addr = server.address();
   if (!addr) return;
 
   const bind = typeof addr === "string"
     ? `pipe ${addr}`
     : `port ${addr.port}`;
+
+  // Initialize Discord bot if configured
+  if (process.env.DISCORD_BOT_TOKEN && process.env.DISCORD_GUILD_ID) {
+    try {
+      console.log('[Server] Initializing Discord bot...');
+      await discordBot.initialize();
+      console.log('[Server] Syncing Discord guild members...');
+      await guildCache.syncGuildMembers();
+      console.log('[Server] Discord bot ready');
+    } catch (error) {
+      console.error('[Server] Failed to initialize Discord bot:', error instanceof Error ? error.message : error);
+    }
+  }
 
   process.env.ENABLE_EMAIL_CRONJOBS === "true" && startCronJobs();
   // void initRedis();
@@ -111,7 +126,9 @@ server.on("error", onError);
 server.on("close", onClose);
 server.on("listening", onListening);
 
-process.on("SIGINT", () => {
+process.on("SIGINT", async () => {
+  console.log('[Server] SIGINT received, shutting down gracefully...');
+  await discordBot.shutdown();
   server.close();
 });
 

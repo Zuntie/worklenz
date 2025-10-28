@@ -7,6 +7,7 @@ import GoogleLogin from "./passport-strategies/passport-google";
 import GoogleMobileLogin from "./passport-strategies/passport-google-mobile";
 import LocalLogin from "./passport-strategies/passport-local-login";
 import LocalSignup from "./passport-strategies/passport-local-signup";
+import DiscordLogin from "./passport-strategies/passport-discord";
 
 /**
  * Use any passport middleware before the serialize and deserialize
@@ -17,6 +18,7 @@ export default (passport: PassportStatic) => {
   passport.use("local-signup", LocalSignup);
   passport.use(GoogleLogin);
   passport.use("google-mobile", GoogleMobileLogin);
+  passport.use("discord", DiscordLogin);
   passport.serializeUser(serialize);
   passport.deserializeUser(deserialize);
 };

@@ -59,6 +59,32 @@ authRouter.get("/google/verify", (req, res) => {
 // Mobile Google Sign-In using Passport strategy
 authRouter.post("/google/mobile", AuthController.googleMobileAuthPassport);
 
+// Discord authentication
+authRouter.get("/discord", (req, res) => {
+  const state = JSON.stringify({
+    teamMember: req.query.teamMember || null,
+    team: req.query.team || null,
+    teamName: req.query.teamName || null,
+    project: req.query.project || null
+  });
+
+  return passport.authenticate("discord", { state })(req, res);
+});
+
+authRouter.get("/discord/verify", (req, res) => {
+  let error = "";
+  if ((req.session as any).error) {
+    error = `?error=${encodeURIComponent((req.session as any).error as string)}`;
+    delete (req.session as any).error;
+  }
+
+  const failureRedirect = process.env.LOGIN_FAILURE_REDIRECT + error;
+  return passport.authenticate("discord", {
+    failureRedirect,
+    successRedirect: process.env.LOGIN_SUCCESS_REDIRECT
+  })(req, res);
+});
+
 // Passport logout
 authRouter.get("/logout", AuthController.logout);
 

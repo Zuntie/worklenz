@@ -9,6 +9,7 @@ import { CheckCircleTwoTone, CloseCircleTwoTone } from '@/shared/antd-imports';
 import { useAppSelector } from '@/hooks/useAppSelector';
 
 import googleIcon from '@/assets/images/google-icon.png';
+import discordIcon from '@/assets/images/discord-icon.svg';
 import PageHeader from '@components/AuthPageHeader';
 
 import { authApiService } from '@/api/auth/auth.api.service';
@@ -20,6 +21,7 @@ import {
   evt_signup_page_visit,
   evt_signup_with_email_click,
   evt_signup_with_google_click,
+  evt_signup_with_discord_click,
 } from '@/shared/worklenz-analytics-events';
 import { useDocumentTitle } from '@/hooks/useDoumentTItle';
 import logger from '@/utils/errorLogger';
@@ -70,6 +72,7 @@ const SignupPage = () => {
   };
 
   const enableGoogleLogin = import.meta.env.VITE_ENABLE_GOOGLE_LOGIN === 'true' || false;
+  const enableDiscordLogin = import.meta.env.VITE_ENABLE_DISCORD_LOGIN === 'true' || false;
   const enableRecaptcha =
     import.meta.env.VITE_ENABLE_RECAPTCHA === 'true' &&
     import.meta.env.VITE_RECAPTCHA_SITE_KEY &&
@@ -268,6 +271,17 @@ const SignupPage = () => {
       window.location.href = url;
     } catch (error) {
       message.error('Failed to redirect to Google sign up');
+    }
+  };
+
+  const onDiscordSignUpClick = () => {
+    try {
+      trackMixpanelEvent(evt_signup_with_discord_click);
+      const queryParams = getInvitationQueryParams();
+      const url = `${import.meta.env.VITE_API_URL}/secure/discord${queryParams ? `?${queryParams}` : ''}`;
+      window.location.href = url;
+    } catch (error) {
+      message.error('Failed to redirect to Discord sign up');
     }
   };
 
@@ -482,6 +496,30 @@ const SignupPage = () => {
                 >
                   <img src={googleIcon} alt="google icon" style={{ maxWidth: 20, width: '100%' }} />
                   {t('signInWithGoogleButton')}
+                </Button>
+              </>
+            )}
+
+            {enableDiscordLogin && (
+              <>
+                {!enableGoogleLogin && <Typography.Text style={{ textAlign: 'center' }}>{t('orText')}</Typography.Text>}
+
+                <Button
+                  block
+                  type="default"
+                  size="large"
+                  onClick={onDiscordSignUpClick}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    borderRadius: 4,
+                    backgroundColor: '#5865F2',
+                    color: 'white',
+                    border: 'none',
+                  }}
+                >
+                  <img src={discordIcon} alt="discord icon" style={{ maxWidth: 20, width: '100%', filter: 'brightness(0) invert(1)', marginRight: 8 }} />
+                  {t('signInWithDiscordButton')}
                 </Button>
               </>
             )}
