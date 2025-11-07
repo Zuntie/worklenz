@@ -5,7 +5,7 @@ mixin list(teams)
 				td
 					h5(style='font-size:1em;margin-top: 12px;margin-bottom:0')
 						div(style='color:rgba(0, 0, 0, 0.45);font-size:12px')
-							img(src='https://worklenz.s3.amazonaws.com/assets/team-icon.png' style='width: 12px;height:12px;')
+							img(src='https://www.esx-framework.org/_next/static/media/esx.e214a7a0.jpg' style='width: 12px;height:12px;')
 							| #{$team.name}
 					for $project of $team.projects
 						b
@@ -27,7 +27,7 @@ html(lang='en')
 		meta(charset='UTF-8')
 		meta(http-equiv='X-UA-Compatible' content='IE=edge')
 		meta(name='viewport' content='width=device-width, initial-scale=1.0')
-		title Worklenz Daily Digest
+		title ESX Hub Daily Digest
 	body
 		style.
 			td {
@@ -46,7 +46,7 @@ html(lang='en')
 						td
 							table(width='100%')
 								tbody
-									tr: td: img(width='50' height='50' src='https://worklenz.s3.amazonaws.com/assets/icon-96x96.png')
+									tr: td: img(width='50' height='50' src='https://www.esx-framework.org/_next/static/media/esx.e214a7a0.jpg')
 									tr: td(style='height:0.625em')
 							table(width='100%')
 								tbody
@@ -64,7 +64,7 @@ html(lang='en')
 														tr
 															td
 																h3(style='display: flex;margin-top: 30px;margin-bottom: 0;font-size: 1.1em;padding-bottom: 6px;border-bottom: 1px solid #d8d8d8;color: #2b2b2b;font-weight: 500;')
-																	img(src="https://worklenz.s3.amazonaws.com/assets/clock.png" style="width: 16px;height: 16px;margin-right: 10px;margin-top: 4px;")
+																	img(src="https://www.esx-framework.org/_next/static/media/esx.e214a7a0.jpg" style="width: 16px;height: 16px;margin-right: 10px;margin-top: 4px;")
 																	| Recently assigned to you
 														+list(recently_assigned)
 												if overdue && overdue.length
@@ -72,7 +72,7 @@ html(lang='en')
 														tr
 															td
 																h3(style='display: flex;margin-top: 30px;margin-bottom: 0;font-size: 1.1em;padding-bottom: 6px;border-bottom: 1px solid #d8d8d8;color: #2b2b2b;font-weight: 500;')
-																	img(src="https://worklenz.s3.amazonaws.com/assets/clock-warn-icon.png" style="width: 16px;height: 16px;margin-right: 10px;margin-top: 4px;")
+																	img(src="https://www.esx-framework.org/_next/static/media/esx.e214a7a0.jpg" style="width: 16px;height: 16px;margin-right: 10px;margin-top: 4px;")
 																	| Overdue
 														+list(overdue)
 												if recently_completed && recently_completed.length
@@ -80,7 +80,7 @@ html(lang='en')
 														tr
 															td
 																h3(style='display: flex;margin-top: 30px;margin-bottom: 0;font-size: 1.1em;padding-bottom: 6px;border-bottom: 1px solid #d8d8d8;color: #2b2b2b;font-weight: 500;')
-																	img(src="https://worklenz.s3.amazonaws.com/assets/check-icon.png" style="width: 16px;height: 16px;margin-right: 10px;margin-top: 4px;")
+																	img(src="https://www.esx-framework.org/_next/static/media/esx.e214a7a0.jpg" style="width: 16px;height: 16px;margin-right: 10px;margin-top: 4px;")
 																	| Today completed
 														+list(recently_completed)
 
@@ -91,7 +91,7 @@ html(lang='en')
 													tr
 														td(bgcolor='#3cb371' style='display:block;height:32px;padding:0 20px;text-align:center;background-color:#1890ff;border-radius:4px;color:#fff')
 															a(href=base_url style='color:inherit;color:#1890ff;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;display:inline-block;width:100%;font-size: 15px;font-family:Helvetica,Arial,sans-serif;text-decoration:none;line-height: 32px;color:#fff' target='_blank')
-																span(style='color:#fff') Go to Worklenz
+																span(style='color:#fff') Go to ESX Hub
 					tr
 						td
 							table(width='100%')
@@ -102,5 +102,5 @@ html(lang='en')
 									tr
 										td(style='padding-top:10px;padding-bottom:10px')
 											p(style='color:#000;margin:0 0 19px;font-size:12px;line-height:15px;color:#6d6d6d;margin-bottom:0')
-												| Worklenz emails this report every evening.&nbsp;
+												| ESX Hub emails this report every evening.&nbsp;
 												a(href=settings_url style='color:inherit;text-decoration:underline;color:#1890ff;color:#6d6d6d' target='_blank') Stop sending it to me.
