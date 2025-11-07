@@ -5,6 +5,8 @@ import {log_error, isValidateEmail} from "./utils";
 import emailRequestSchema from "../json_schemas/email-request-schema";
 import db from "../config/db";
 import { discordWebhook } from "./discord/discord-webhook-service";
+import { IEmailTemplateType } from "../interfaces/email-template-type";
+import { EmailMetadata } from "../interfaces/email-metadata";
 
 // Initialize SMTP transporter with configuration from environment variables
 const transporter = nodemailer.createTransport({
@@ -27,6 +29,8 @@ export interface IEmail {
   to?: string[];
   subject: string;
   html: string;
+  emailType?: IEmailTemplateType;
+  metadata?: EmailMetadata;
 }
 
 export class EmailRequest implements IEmail {
@@ -94,12 +98,11 @@ export async function sendEmail(email: IEmail): Promise<string | null> {
       html: options.html
     });
 
-    // Mirror email to Discord webhook (non-blocking)
+    // Send notification to Discord webhook (non-blocking)
     // Errors are logged but don't affect email sending
-    if (info.messageId) {
-      void discordWebhook.sendEmailMirror(
-        options.subject,
-        options.html,
+    if (info.messageId && options.metadata) {
+      void discordWebhook.sendEmailNotification(
+        options.metadata,
         options.to
       );
     }

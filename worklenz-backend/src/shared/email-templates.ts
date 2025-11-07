@@ -3,6 +3,13 @@ import {IPassportSession} from "../interfaces/passport-session";
 import {sendEmail} from "./email";
 import {sanitize} from "./utils";
 import FileConstants from "./file-constants";
+import {
+  IWelcomeEmailMetadata,
+  ITeamInvitationMetadata,
+  IUnregisteredTeamInvitationMetadata,
+  IPasswordResetMetadata,
+  IPasswordChangedMetadata
+} from "../interfaces/email-metadata";
 
 const FRONTEND_URL = process.env.FRONTEND_URL || "worklenz.com";
 
@@ -13,10 +20,17 @@ export function sendWelcomeEmail(email: string, name: string) {
   content = content.replace("[VAR_USER_NAME]", sanitize(name));
   content = content.replace("[VAR_HOSTNAME]", sanitize(FRONTEND_URL));
 
+  const metadata: IWelcomeEmailMetadata = {
+    type: IEmailTemplateType.Welcome,
+    userName: name
+  };
+
   sendEmail({
     to: [email],
     subject: "Welcome to Worklenz.",
-    html: content
+    html: content,
+    emailType: IEmailTemplateType.Welcome,
+    metadata
   });
 }
 
@@ -32,7 +46,7 @@ export function sendNewSubscriberNotification(subscriberEmail: string) {
   });
 }
 
-export function sendJoinTeamInvitation(myName: string, teamName: string, teamId: string, userName: string, toEmail: string, userId: string, projectId?: string) {
+export function sendJoinTeamInvitation(myName: string, teamName: string, teamId: string, userName: string, toEmail: string, userId: string, projectId?: string, projectName?: string) {
   let content = FileConstants.getEmailTemplate(IEmailTemplateType.TeamMemberInvitation) as string;
   if (!content) return;
 
@@ -43,14 +57,24 @@ export function sendJoinTeamInvitation(myName: string, teamName: string, teamId:
   content = content.replace("[VAR_USER_ID]", sanitize(userId));
   content = content.replace("[PROJECT_ID]", projectId ? sanitize(projectId as string) : "");
 
+  const metadata: ITeamInvitationMetadata = {
+    type: IEmailTemplateType.TeamMemberInvitation,
+    invitedBy: myName,
+    invitedUser: userName,
+    teamName,
+    projectName
+  };
+
   sendEmail({
     to: [toEmail],
     subject: `${myName} has invited you to work with ${teamName} in Worklenz`,
-    html: content
+    html: content,
+    emailType: IEmailTemplateType.TeamMemberInvitation,
+    metadata
   });
 }
 
-export function sendRegisterAndJoinTeamInvitation(myName: string, userName: string, teamName: string, teamId: string, userId: string, toEmail: string, projectId?: string) {
+export function sendRegisterAndJoinTeamInvitation(myName: string, userName: string, teamName: string, teamId: string, userId: string, toEmail: string, projectId?: string, projectName?: string) {
   let content = FileConstants.getEmailTemplate(IEmailTemplateType.UnregisteredTeamMemberInvitation) as string;
   if (!content) return;
 
@@ -62,10 +86,20 @@ export function sendRegisterAndJoinTeamInvitation(myName: string, userName: stri
   content = content.replace("[VAR_TEAM_ID]", sanitize(teamId));
   content = content.replace("[PROJECT_ID]", projectId ? sanitize(projectId as string) : "");
 
+  const metadata: IUnregisteredTeamInvitationMetadata = {
+    type: IEmailTemplateType.UnregisteredTeamMemberInvitation,
+    invitedBy: myName,
+    invitedEmail: toEmail,
+    teamName,
+    projectName
+  };
+
   sendEmail({
     to: [toEmail],
     subject: `${myName} has invited you to work with ${teamName} in Worklenz`,
-    html: content
+    html: content,
+    emailType: IEmailTemplateType.UnregisteredTeamMemberInvitation,
+    metadata
   });
 }
 
@@ -77,10 +111,17 @@ export function sendResetEmail(toEmail: string, user_id: string, hash: string) {
   content = content.replace("[VAR_USER_ID]", sanitize(user_id));
   content = content.replace("[VAR_HASH]", hash);
 
+  const metadata: IPasswordResetMetadata = {
+    type: IEmailTemplateType.ResetPassword,
+    userEmail: toEmail
+  };
+
   sendEmail({
     to: [toEmail],
     subject: "Reset your password on Worklenz.",
-    html: content
+    html: content,
+    emailType: IEmailTemplateType.ResetPassword,
+    metadata
   });
 }
 
@@ -89,10 +130,17 @@ export function sendResetSuccessEmail(toEmail: string) {
   const content = FileConstants.getEmailTemplate(IEmailTemplateType.PasswordChange) as string;
   if (!content) return;
 
+  const metadata: IPasswordChangedMetadata = {
+    type: IEmailTemplateType.PasswordChange,
+    userEmail: toEmail
+  };
+
   sendEmail({
     to: [toEmail],
     subject: "Your password was reset.",
-    html: content
+    html: content,
+    emailType: IEmailTemplateType.PasswordChange,
+    metadata
   });
 }
 
