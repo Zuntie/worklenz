@@ -8,6 +8,8 @@ import { DATE_RANGES, TASK_PRIORITY_COLOR_ALPHA } from "../../shared/constants";
 import { formatDuration, getColor, int } from "../../shared/utils";
 import ReportingControllerBaseWithTimezone from "./reporting-controller-base-with-timezone";
 import Excel from "exceljs";
+import { maskEmailInData } from "../../utils/mask-email.util";
+import { getMaskingOptions } from "../../utils/check-email-permission.util";
 
 export default class ReportingMembersController extends ReportingControllerBaseWithTimezone {
 
@@ -411,6 +413,13 @@ export default class ReportingMembersController extends ReportingControllerBaseW
 
     const teamId = this.getCurrentTeamId(req);
     const result = await this.getMembers(teamId as string, searchQuery, size, offset, teamsClause, duration as string, dateRange, archived, req.user?.id as string);
+
+    // Mask emails for non-admin users
+    const maskingOptions = getMaskingOptions(req.user);
+    if (result.members) {
+      result.members = maskEmailInData(result.members, "email", "name", maskingOptions);
+    }
+
     const body = {
       total: result.total,
       members: result.members,
@@ -443,6 +452,12 @@ export default class ReportingMembersController extends ReportingControllerBaseW
     const teamId = this.getCurrentTeamId(req);
     const teamName = (req.query.team_name as string)?.trim() || null;
     const result = await this.getMembers(teamId as string, "", null, null, "", duration as string, dateRange, archived, req.user?.id as string);
+
+    // Mask emails for non-admin users before exporting
+    const maskingOptions = getMaskingOptions(req.user);
+    if (result.members) {
+      result.members = maskEmailInData(result.members, "email", "name", maskingOptions);
+    }
 
     let start = "-";
     let end = "-";

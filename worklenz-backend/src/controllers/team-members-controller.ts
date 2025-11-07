@@ -17,6 +17,8 @@ import { statusExclude, TEAM_MEMBER_TREE_MAP_COLOR_ALPHA, TRIAL_MEMBER_LIMIT } f
 import { checkTeamSubscriptionStatus } from "../shared/paddle-utils";
 import { updateUsers } from "../shared/paddle-requests";
 import { NotificationsService } from "../services/notifications/notifications.service";
+import { maskEmailInData } from "../utils/mask-email.util";
+import { getMaskingOptions } from "../utils/check-email-permission.util";
 
 export default class TeamMembersController extends WorklenzControllerBase {
 
@@ -265,6 +267,12 @@ export default class TeamMembersController extends WorklenzControllerBase {
       return a;
     });
 
+    // Mask emails for non-admin users
+    const maskingOptions = getMaskingOptions(req.user);
+    if (members.data) {
+      members.data = maskEmailInData(members.data, "email", "name", maskingOptions);
+    }
+
     return res.status(200).send(new ServerResponse(true, members || this.paginatedDatasetDefaultStruct));
   }
 
@@ -281,7 +289,11 @@ export default class TeamMembersController extends WorklenzControllerBase {
       member.usage = +member.usage;
     }
 
-    return res.status(200).send(new ServerResponse(true, members));
+    // Mask emails for non-admin users
+    const maskingOptions = getMaskingOptions(req.user);
+    const maskedMembers = maskEmailInData(members, "email", "name", maskingOptions);
+
+    return res.status(200).send(new ServerResponse(true, maskedMembers));
   }
 
   @HandleExceptions()
@@ -312,7 +324,12 @@ export default class TeamMembersController extends WorklenzControllerBase {
     `;
     const result = await db.query(q, [req.params.id, req.user?.team_id || null]);
     const [data] = result.rows;
-    return res.status(200).send(new ServerResponse(true, data));
+
+    // Mask email for non-admin users
+    const maskingOptions = getMaskingOptions(req.user, data?.user_id);
+    const maskedData = maskEmailInData(data, "email", "name", maskingOptions);
+
+    return res.status(200).send(new ServerResponse(true, maskedData));
   }
 
   @HandleExceptions()
@@ -336,7 +353,12 @@ export default class TeamMembersController extends WorklenzControllerBase {
       ORDER BY project_members.created_at DESC;
     `;
     const result = await db.query(q, [req.params.id]);
-    return res.status(200).send(new ServerResponse(true, result.rows));
+
+    // Mask emails for non-admin users
+    const maskingOptions = getMaskingOptions(req.user);
+    const maskedRows = maskEmailInData(result.rows, "email", "name", maskingOptions);
+
+    return res.status(200).send(new ServerResponse(true, maskedRows));
   }
 
   @HandleExceptions()
@@ -846,6 +868,12 @@ export default class TeamMembersController extends WorklenzControllerBase {
       a.total_logged_time = formatDuration(moment.duration(a.total_logged_time_seconds || "0", "seconds"));
     });
 
+    // Mask emails for non-admin users
+    const maskingOptions = getMaskingOptions(req.user);
+    if (teamMembers.data) {
+      teamMembers.data = maskEmailInData(teamMembers.data, "email", "name", maskingOptions);
+    }
+
     return res.status(200).send(new ServerResponse(true, teamMembers || this.paginatedDatasetDefaultStruct));
   }
 
@@ -909,6 +937,12 @@ export default class TeamMembersController extends WorklenzControllerBase {
     const { start, end, project, status } = req.query;
 
     const teamMembers = await this.getTeamMemberInsightData(req.user?.team_id, start || null, end, project, status, searchQuery, sortField, sortOrder, size, offset, req.query.all);
+
+    // Mask emails for non-admin users before exporting
+    const maskingOptions = getMaskingOptions(req.user);
+    if (teamMembers.data) {
+      teamMembers.data = maskEmailInData(teamMembers.data, "email", "name", maskingOptions);
+    }
 
     const exportDate = moment().format("MMM-DD-YYYY");
     const fileName = `Worklenz - Team Members Export - ${exportDate}`;

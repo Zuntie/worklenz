@@ -7,6 +7,8 @@ import Excel from "exceljs";
 import ReportingControllerBase from "../reporting-controller-base";
 import { DATE_RANGES } from "../../../shared/constants";
 import db from "../../../config/db";
+import { maskEmailInData } from "../../../utils/mask-email.util";
+import { getMaskingOptions } from "../../../utils/check-email-permission.util";
 
 export default class ReportingProjectsExportController extends ReportingProjectsBase {
 
@@ -16,6 +18,18 @@ export default class ReportingProjectsExportController extends ReportingProjects
     const teamName = (req.query.team_name as string)?.trim() || null;
 
     const results = await ReportingControllerBase.exportProjectsAll(teamId as string);
+
+    // Mask emails in mentions for non-admin users before exporting
+    const maskingOptions = getMaskingOptions(req.user);
+    for (const project of results.projects) {
+      if (project.update && project.update.length > 0) {
+        for (const update of project.update) {
+          if (update.mentions && Array.isArray(update.mentions)) {
+            update.mentions = maskEmailInData(update.mentions, "user_email", "user_name", maskingOptions);
+          }
+        }
+      }
+    }
 
     // excel file
     const exportDate = moment().format("MMM-DD-YYYY");

@@ -13,6 +13,8 @@ import { IPassportSession } from "../interfaces/passport-session";
 import { SocketEvents } from "../socket.io/events";
 import { IO } from "../shared/io";
 import { getCurrentProjectsCount, getFreePlanSettings } from "../shared/paddle-utils";
+import { maskEmailInData } from "../utils/mask-email.util";
+import { getMaskingOptions } from "../utils/check-email-permission.util";
 
 export default class ProjectsController extends WorklenzControllerBase {
 
@@ -366,6 +368,12 @@ export default class ProjectsController extends WorklenzControllerBase {
     for (const member of data?.data || []) {
       member.progress = member.all_tasks_count > 0
         ? ((member.completed_tasks_count / member.all_tasks_count) * 100).toFixed(0) : 0;
+    }
+
+    // Mask emails for non-admin users
+    const maskingOptions = getMaskingOptions(req.user);
+    if (data?.data) {
+      data.data = maskEmailInData(data.data, "email", "name", maskingOptions);
     }
 
     return res.status(200).send(new ServerResponse(true, data || this.paginatedDatasetDefaultStruct));

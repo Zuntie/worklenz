@@ -8,6 +8,8 @@ import moment from "moment";
 import { DATE_RANGES, TASK_PRIORITY_COLOR_ALPHA } from "../../../shared/constants";
 import { getColor, int, formatDuration, formatLogText } from "../../../shared/utils";
 import db from "../../../config/db";
+import { maskEmailInData } from "../../../utils/mask-email.util";
+import { getMaskingOptions } from "../../../utils/check-email-permission.util";
 
 export default class ReportingProjectsController extends ReportingProjectsBase {
 
@@ -91,6 +93,18 @@ export default class ReportingProjectsController extends ReportingProjectsBase {
         project.last_activity.log_text = await formatLogText(project.last_activity);
         project.last_activity.attribute_type = project.last_activity.attribute_type?.replace(/_/g, " ");
         project.last_activity.last_activity_string = `${project.last_activity.done_by.name} ${project.last_activity.log_text} ${project.last_activity.attribute_type}`;
+      }
+    }
+
+    // Mask emails in mentions for non-admin users
+    const maskingOptions = getMaskingOptions(req.user);
+    for (const project of result.projects) {
+      if (project.update && project.update.length > 0) {
+        for (const update of project.update) {
+          if (update.mentions && Array.isArray(update.mentions)) {
+            update.mentions = maskEmailInData(update.mentions, "user_email", "user_name", maskingOptions);
+          }
+        }
       }
     }
 

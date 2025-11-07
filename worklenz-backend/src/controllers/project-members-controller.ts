@@ -11,6 +11,8 @@ import {checkTeamSubscriptionStatus} from "../shared/paddle-utils";
 import {updateUsers} from "../shared/paddle-requests";
 import {statusExclude, TRIAL_MEMBER_LIMIT} from "../shared/constants";
 import {NotificationsService} from "../services/notifications/notifications.service";
+import { maskEmailInData } from "../utils/mask-email.util";
+import { getMaskingOptions } from "../utils/check-email-permission.util";
 
 export default class ProjectMembersController extends WorklenzControllerBase {
 
@@ -193,7 +195,11 @@ export default class ProjectMembersController extends WorklenzControllerBase {
 
     result.rows.forEach((a: any) => a.color_code = getColor(a.name));
 
-    return res.status(200).send(new ServerResponse(true, result.rows));
+    // Mask emails for non-admin users
+    const maskingOptions = getMaskingOptions(req.user);
+    const maskedRows = maskEmailInData(result.rows, "email", "name", maskingOptions);
+
+    return res.status(200).send(new ServerResponse(true, maskedRows));
   }
 
   public static async checkIfMemberExists(projectId: string, teamMemberId: string) {

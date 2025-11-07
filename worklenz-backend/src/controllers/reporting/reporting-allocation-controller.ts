@@ -9,6 +9,8 @@ import ReportingControllerBase from "./reporting-controller-base";
 import { DATE_RANGES } from "../../shared/constants";
 import Excel from "exceljs";
 import ChartJsImage from "chartjs-to-image";
+import { maskEmailInData } from "../../utils/mask-email.util";
+import { getMaskingOptions } from "../../utils/check-email-permission.util";
 
 enum IToggleOptions {
   'WORKING_DAYS' = 'WORKING_DAYS', 'MAN_DAYS' = 'MAN_DAYS'
@@ -497,7 +499,11 @@ export default class ReportingAllocationController extends ReportingControllerBa
       member.over_under_utilized_hours = overUnder.toFixed(2);
     }
 
-    return res.status(200).send(new ServerResponse(true, result.rows));
+    // Mask emails for non-admin users
+    const maskingOptions = getMaskingOptions(req.user);
+    const maskedRows = maskEmailInData(result.rows, "email", "name", maskingOptions);
+
+    return res.status(200).send(new ServerResponse(true, maskedRows));
   }
 
   @HandleExceptions()

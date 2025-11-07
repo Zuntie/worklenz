@@ -9,6 +9,8 @@ import { getColor } from "../../shared/utils";
 import moment, { Moment } from "moment";
 import momentTime from "moment-timezone";
 import WorklenzControllerBase from "../worklenz-controller-base";
+import { maskEmailInData } from "../../utils/mask-email.util";
+import { getMaskingOptions } from "../../utils/check-email-permission.util";
 
 interface IDateUnions {
     date_union: {
@@ -275,7 +277,12 @@ export default class ScheduleControllerV2 extends WorklenzControllerBase {
                         ORDER BY users.email ASC, users.name ASC;`;
 
         const results = await db.query(getDataq, [req.user?.owner_id]);
-        return res.status(200).send(new ServerResponse(true, results.rows));
+
+        // Mask emails for non-admin users
+        const maskingOptions = getMaskingOptions(req.user);
+        const maskedRows = maskEmailInData(results.rows, "email", "name", maskingOptions);
+
+        return res.status(200).send(new ServerResponse(true, maskedRows));
 
     }
 

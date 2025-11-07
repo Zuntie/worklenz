@@ -10,6 +10,8 @@ import {ServerResponse} from "../models/server-response";
 import WorklenzControllerBase from "./worklenz-controller-base";
 import HandleExceptions from "../decorators/handle-exceptions";
 import momentTime from "moment-timezone";
+import { maskEmailInData } from "../utils/mask-email.util";
+import { getMaskingOptions } from "../utils/check-email-permission.util";
 
 export default class TaskWorklogController extends WorklenzControllerBase {
 
@@ -74,7 +76,11 @@ export default class TaskWorklogController extends WorklenzControllerBase {
     for (const item of results)
       item.avatar_color = getColor(item.user_name);
 
-    return res.status(200).send(new ServerResponse(true, results));
+    // Mask emails for non-admin users
+    const maskingOptions = getMaskingOptions(req.user);
+    const maskedResults = maskEmailInData(results, "user_email", "user_name", maskingOptions);
+
+    return res.status(200).send(new ServerResponse(true, maskedResults));
   }
 
   @HandleExceptions()
@@ -128,6 +134,11 @@ export default class TaskWorklogController extends WorklenzControllerBase {
   @HandleExceptions()
   public static async exportLog(req: IWorkLenzRequest, res: IWorkLenzResponse): Promise<void> {
     const results = await this.getTimeLogs(req.params.id, req.query.timeZone as string);
+
+    // Mask emails for non-admin users before exporting
+    const maskingOptions = getMaskingOptions(req.user);
+    const maskedResults = maskEmailInData(results, "user_email", "user_name", maskingOptions);
+
     const metadata = await this.getExportMetadata(req.params.id);
     const timezone = await this.getUserTimeZone(req.user?.id || "");
 
@@ -173,7 +184,7 @@ export default class TaskWorklogController extends WorklenzControllerBase {
     const timeFormat = "MMM DD, YYYY h:mm:ss a";
     let totalLogged = 0;
 
-    for (const item of results) {
+    for (const item of maskedResults) {
       totalLogged += parseFloat((item.time_spent || 0).toString());
       const data = {
         user_name: item.user_name,
