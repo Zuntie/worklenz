@@ -3448,7 +3448,12 @@ BEGIN
     _total_completed = _parent_task_done + _sub_tasks_done;
 --     _total_tasks = _sub_tasks_count + 1; -- +1 for the parent task
     _total_tasks = _sub_tasks_count; -- +1 for the parent task
-    _ratio = (_total_completed / _total_tasks) * 100;
+
+    IF _total_tasks = 0 THEN
+        _ratio = 0;
+    ELSE
+        _ratio = (_total_completed / _total_tasks) * 100;
+    END IF;
 
     RETURN JSON_BUILD_OBJECT(
         'ratio', _ratio,
