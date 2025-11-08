@@ -22,6 +22,8 @@ out/
 .env.*
 !.env.example
 !.env.template
+worklenz-frontend/.env.development
+**/bun.lock
 
 # Logs
 logs
