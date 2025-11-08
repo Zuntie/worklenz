@@ -145,7 +145,8 @@ export const DEFAULT_PAGE_SIZE = 20;
 // S3 Credentials
 export const REGION = process.env.S3_REGION || "us-east-1";
 export const BUCKET = process.env.S3_BUCKET || "your-bucket-name";
-export const S3_URL = process.env.S3_URL || "https://your-s3-url";
+export const S3_URL = process.env.S3_URL || "https://your-s3-url"; // Public URL for generated file URLs
+export const S3_ENDPOINT = process.env.S3_ENDPOINT || process.env.S3_URL || "https://your-s3-url"; // Internal endpoint for S3Client
 export const S3_ACCESS_KEY_ID = process.env.S3_ACCESS_KEY_ID || "";
 export const S3_SECRET_ACCESS_KEY = process.env.S3_SECRET_ACCESS_KEY || "";
 

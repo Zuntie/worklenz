@@ -30,19 +30,20 @@ import {
   S3_ACCESS_KEY_ID,
   S3_SECRET_ACCESS_KEY,
   S3_URL,
+  S3_ENDPOINT,
   STORAGE_PROVIDER,
 } from "./constants";
 
-// Parse the endpoint URL from S3_URL if it exists
+// Parse the endpoint URL from S3_ENDPOINT
 const getEndpointFromUrl = () => {
   try {
-    if (!S3_URL) return undefined;
-    
-    // Extract the endpoint URL (e.g., http://minio:9000 from http://minio:9000/bucket)
-    const url = new URL(S3_URL);
+    if (!S3_ENDPOINT) return undefined;
+
+    // Extract the endpoint URL (e.g., http://minio:9000)
+    const url = new URL(S3_ENDPOINT);
     return `${url.protocol}//${url.host}`;
   } catch (error) {
-    console.warn("Error parsing S3_URL:", error);
+    console.warn("Error parsing S3_ENDPOINT:", error);
     return undefined;
   }
 };
@@ -54,13 +55,14 @@ const s3Client = new S3Client({
     accessKeyId: S3_ACCESS_KEY_ID || "",
     secretAccessKey: S3_SECRET_ACCESS_KEY || "",
   },
-  endpoint: getEndpointFromUrl(),
+  endpoint: getEndpointFromUrl(), // Uses S3_ENDPOINT (internal) for uploads
   forcePathStyle: true, // Required for MinIO
 });
 
 // Log the storage configuration
 console.log(`Storage provider initialized: ${STORAGE_PROVIDER}`);
-console.log(`Using endpoint: ${getEndpointFromUrl() || "AWS default"}`);
+console.log(`Using S3 endpoint for uploads: ${getEndpointFromUrl() || "AWS default"}`);
+console.log(`Using S3_URL for public file URLs: ${S3_URL}`);
 console.log(`Bucket: ${BUCKET}`);
 
 // Initialize Azure Blob Storage Client
@@ -156,15 +158,9 @@ async function uploadBufferToS3(
     };
 
     await s3Client.send(new PutObjectCommand(bucketParams));
-    
-    // Create proper URL depending on whether we're using S3 or MinIO
-    const endpointUrl = getEndpointFromUrl();
-    if (endpointUrl) {
-      // For MinIO or custom S3 endpoint
-      return `${endpointUrl}/${BUCKET}/${location}`;
-    }
-    
-    // For standard AWS S3
+
+    // Always use S3_URL for public file URLs (even for MinIO)
+    // S3_ENDPOINT is only used for upload/download operations via S3Client
     return `${S3_URL}/${location}`;
   } catch (error) {
     log_error(error);

@@ -9,7 +9,7 @@ import {
   S3Client
 } from "@aws-sdk/client-s3";
 import {isProduction, isTestServer, log_error} from "./utils";
-import {BUCKET, REGION, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, S3_URL} from "./constants";
+import {BUCKET, REGION, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, S3_URL, S3_ENDPOINT} from "./constants";
 import {getSignedUrl} from "@aws-sdk/s3-request-presigner";
 import mime from "mime";
 
@@ -20,7 +20,7 @@ const s3Client = new S3Client({
     accessKeyId: S3_ACCESS_KEY_ID || "",
     secretAccessKey: S3_SECRET_ACCESS_KEY || "",
   },
-  endpoint: S3_URL,
+  endpoint: S3_ENDPOINT, // Use S3_ENDPOINT for internal uploads (e.g., http://minio:9000)
   forcePathStyle: true,
 });
 
