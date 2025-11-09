@@ -43,6 +43,10 @@ function linkify(text: string): string {
   });
 }
 
+function preserveNewlines(text: string): string {
+  return text.replace(/\n/g, '<br />');
+}
+
 const ProjectViewUpdates = () => {
   const { projectId } = useParams();
   const [characterLength, setCharacterLength] = useState<number>(0);
@@ -243,10 +247,12 @@ const ProjectViewUpdates = () => {
 
   const renderComment = useCallback(
     (comment: IProjectUpdateCommentViewModel) => {
-      const linkifiedContent = linkify(comment.content || '');
+      const contentWithNewlines = preserveNewlines(comment.content || '');
+      const linkifiedContent = linkify(contentWithNewlines);
       const sanitizedContent = DOMPurify.sanitize(linkifiedContent);
       const timeDifference = calculateTimeDifference(comment.created_at || '');
       const themeClass = theme === 'dark' ? 'dark' : 'light';
+
 
       return (
         <Dropdown
@@ -269,13 +275,14 @@ const ProjectViewUpdates = () => {
                   </Tooltip>
                 </Space>
                 <Typography.Paragraph
-                  style={{ margin: '8px 0' }}
-                  ellipsis={{ rows: 3, expandable: true }}
+                  style={{ margin: '8px 0', whiteSpace: 'pre-wrap' }}
+                  ellipsis={{ rows: 6, expandable: true }}
                 >
                   <div
                     className={`mentions-${themeClass}`}
                     dangerouslySetInnerHTML={{ __html: sanitizedContent }}
                     onClick={handleCommentLinkClick}
+                    style={{ whiteSpace: 'pre-wrap' }}
                   />
                 </Typography.Paragraph>
               </Flex>
