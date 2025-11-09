@@ -3618,14 +3618,14 @@ BEGIN
     INTO _result
     FROM (SELECT name,
                  email,
-                 (SELECT id
+                 (SELECT MIN(id)
                   FROM team_members
                   WHERE team_id = users.active_team
                     AND user_id = users.id) AS team_member_id,
                  (SELECT COALESCE(ARRAY_TO_JSON(ARRAY_AGG(ROW_TO_JSON(r))), '[]'::JSON) AS teams
                   FROM (SELECT id,
                                name,
-                               (SELECT team_member_id
+                               (SELECT MIN(team_member_id)
                                 FROM team_member_info_view
                                 WHERE team_id = teams.id
                                   AND user_id = users.id) AS team_member_id,
