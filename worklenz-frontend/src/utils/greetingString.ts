@@ -8,7 +8,8 @@ export const greetingString = (name: string): string => {
 
   if (hours < 12) greet = 'morning';
   else if (hours >= 12 && hours < 16) greet = 'afternoon';
-  else if (hours >= 16 && hours < 24) greet = 'evening';
+  else if (hours >= 16 && hours < 21) greet = 'evening';
+  else greet = 'night';
 
   const language = getLanguageFromLocalStorage();
   let greetingPrefix = 'Hi';
@@ -16,6 +17,7 @@ export const greetingString = (name: string): string => {
   let morning = 'morning';
   let afternoon = 'afternoon';
   let evening = 'evening';
+  let night = 'night';
 
   if (language === 'es') {
     greetingPrefix = 'Hola';
@@ -23,37 +25,43 @@ export const greetingString = (name: string): string => {
     morning = 'mañana';
     afternoon = 'tarde';
     evening = 'noche';
+    night = 'noche';
   } else if (language === 'pt') {
     greetingPrefix = 'Olá';
     greetingSuffix = 'Bom';
     morning = 'manhã';
     afternoon = 'tarde';
     evening = 'noite';
+    night = 'noite';
   } else if (language === 'alb') {
     greetingPrefix = 'Përshëndetje';
     greetingSuffix = 'të mbarë';
     morning = 'mëngjesi';
     afternoon = 'pasdite';
     evening = 'mbrëmja';
+    night = 'natën';
   } else if (language === 'de') {
     greetingPrefix = 'Hallo';
     greetingSuffix = 'Guten';
     morning = 'Morgen';
     afternoon = 'Tag';
     evening = 'Abend';
+    night = 'Nacht';
   } else if (language === 'zh_cn') {
     greetingPrefix = '你好';
     greetingSuffix = '';
     morning = '早上好';
     afternoon = '下午好';
     evening = '晚上好';
+    night = '晚安';
   }
 
   // Get the localized time period based on the current time
   let localizedTimePeriod;
   if (greet === 'morning') localizedTimePeriod = morning;
   else if (greet === 'afternoon') localizedTimePeriod = afternoon;
-  else localizedTimePeriod = evening;
+  else if (greet === 'evening') localizedTimePeriod = evening;
+  else localizedTimePeriod = night;
 
   // Handle Chinese language which has different structure
   if (language === 'zh_cn') {
