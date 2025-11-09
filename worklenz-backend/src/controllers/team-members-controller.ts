@@ -74,7 +74,10 @@ export default class TeamMembersController extends WorklenzControllerBase {
 
   @HandleExceptions({
     raisedExceptions: {
-      "ERROR_EMAIL_INVITATION_EXISTS": `Team member with email "{0}" already exists.`
+      "ERROR_EMAIL_INVITATION_EXISTS": `Team member with email "{0}" already exists.`,
+      "ERROR_INVALID_DISCORD_ID_FORMAT": `Invalid Discord ID format: "{0}". Discord IDs must be 17-19 digits.`,
+      "ERROR_DISCORD_ID_ALREADY_EXISTS": `Discord ID "{0}" is already registered to another user.`,
+      "ERROR_DISCORD_ID_PENDING_INVITATION": `Discord ID "{0}" is already assigned to a pending invitation.`
     }
   })
   public static async create(req: IWorkLenzRequest, res: IWorkLenzResponse): Promise<IWorkLenzResponse> {

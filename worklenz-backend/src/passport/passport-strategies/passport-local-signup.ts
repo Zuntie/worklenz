@@ -97,7 +97,8 @@ async function registerUser(password: string, team_id: string, name: string, tea
 async function handleSignUp(req: Request, email: string, password: string, done: any) {
   (req.session as any).flash = {};
   // team = Invited team_id if req.body.from_invitation is true
-  const {name, team_name, team_member_id, team_id, timezone, discord_id} = req.body;
+  const {name, team_name, team_member_id, team_id, timezone} = req.body;
+  let discord_id = req.body.discord_id; // User-provided (will be overridden)
 
   if (!team_name) return done(null, null, req.flash(ERROR_KEY, "Team name is required"));
 
@@ -106,20 +107,48 @@ async function handleSignUp(req: Request, email: string, password: string, done:
     return done(null, null, req.flash(ERROR_KEY, "Registration is invite-only. Please request an invite from your team."));
   }
 
-  // ENFORCE: Discord ID is required
-  if (!discord_id) {
-    return done(null, null, req.flash(ERROR_KEY, "Discord ID is required. Please provide your Discord User ID."));
+  // CRITICAL: Retrieve discord_id from invitation (admin-specified)
+  const invitationQuery = `
+    SELECT discord_id
+    FROM email_invitations
+    WHERE team_member_id = $1 AND email = $2 AND team_id = $3
+  `;
+  const invitationResult = await db.query(invitationQuery, [
+    team_member_id,
+    email.toLowerCase().trim(),
+    team_id
+  ]);
+
+  if (!invitationResult.rowCount) {
+    return done(null, null, req.flash(ERROR_KEY, "Invalid invitation. Please request a new invitation from your admin."));
   }
 
-  // Validate Discord ID format
+  const invitationDiscordId = invitationResult.rows[0].discord_id;
+
+  // ENFORCE: Invitation must have Discord ID
+  if (!invitationDiscordId) {
+    return done(null, null, req.flash(ERROR_KEY, "This invitation is missing a Discord ID. Please contact your admin to resend the invitation with a Discord ID."));
+  }
+
+  // Use invitation's Discord ID (ignore user input if provided)
+  discord_id = invitationDiscordId;
+
+  // Log if user attempted to provide different Discord ID (security monitoring)
+  if (req.body.discord_id && req.body.discord_id !== invitationDiscordId) {
+    log_error(new Error(
+      `User ${email} attempted signup with discord_id ${req.body.discord_id} but invitation specifies ${invitationDiscordId}`
+    ));
+  }
+
+  // Validate Discord ID format (defensive check - should already be validated)
   if (!isValidDiscordIdFormat(discord_id)) {
-    return done(null, null, req.flash(ERROR_KEY, "Invalid Discord ID format. Discord IDs must be 17-19 digits."));
+    return done(null, null, req.flash(ERROR_KEY, "Invalid Discord ID in invitation. Please contact your admin."));
   }
 
-  // Check if Discord ID is already in use
+  // Check if Discord ID is already in use (defensive check)
   const discordIdTaken = await isDiscordIdTaken(discord_id);
   if (discordIdTaken) {
-    return done(null, null, req.flash(ERROR_KEY, "This Discord ID is already registered. Please use your own Discord ID."));
+    return done(null, null, req.flash(ERROR_KEY, "Discord ID from invitation is already in use. Please contact support."));
   }
 
   // Validate Discord guild membership
@@ -131,7 +160,7 @@ async function handleSignUp(req: Request, email: string, password: string, done:
 
   const inGuild = await isDiscordUserInGuild(discord_id, guildId);
   if (!inGuild) {
-    return done(null, null, req.flash(ERROR_KEY, "You must be a member of the ESX Discord server to register. Please join the server and try again."));
+    return done(null, null, req.flash(ERROR_KEY, "The Discord ID specified in your invitation is not a member of the ESX Discord server. Please contact your admin."));
   }
 
   const googleAccountFound = await isGoogleAccountFound(email);

@@ -1,4 +1,4 @@
-import { AutoComplete, Button, Drawer, Flex, Form, message, Modal, Select, Spin, Typography } from '@/shared/antd-imports';
+import { AutoComplete, Button, Drawer, Flex, Form, Input, message, Modal, Select, Spin, Typography } from '@/shared/antd-imports';
 import { useAppSelector } from '@/hooks/useAppSelector';
 import { useAppDispatch } from '@/hooks/useAppDispatch';
 import {
@@ -11,12 +11,13 @@ import { jobTitlesApiService } from '@/api/settings/job-titles/job-titles.api.se
 import { IJobTitle } from '@/types/job.types';
 import { teamMembersApiService } from '@/api/team-members/teamMembers.api.service';
 import { ITeamMemberCreateRequest } from '@/types/teamMembers/team-member-create-request';
-import { LinkOutlined } from '@ant-design/icons';
+import { LinkOutlined, IdcardOutlined } from '@ant-design/icons';
 
 interface FormValues {
   email: string[];
   jobTitle: string;
   access: 'member' | 'admin';
+  discordId?: string;
 }
 
 const InviteTeamMembers = () => {
@@ -62,6 +63,7 @@ const InviteTeamMembers = () => {
         job_title: selectedJobTitle,
         emails: emails,
         is_admin: values.access === 'admin',
+        discord_id: values.discordId || undefined,
       };
       const res = await teamMembersApiService.createTeamMember(body);
       if (res.done) {
@@ -186,6 +188,28 @@ const InviteTeamMembers = () => {
             ]}
           />
         </Form.Item>
+
+        <Form.Item
+          label="Discord User ID (Optional)"
+          name="discordId"
+          tooltip="The Discord User ID of the person you're inviting. If provided, they must use this exact Discord ID during signup."
+          rules={[
+            {
+              pattern: /^\d{17,19}$/,
+              message: 'Discord ID must be 17-19 digits',
+            },
+          ]}
+        >
+          <Input
+            prefix={<IdcardOutlined />}
+            placeholder="Enter Discord User ID (17-19 digits)"
+            maxLength={19}
+          />
+        </Form.Item>
+
+        <Typography.Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: -16 }}>
+          Providing a Discord ID will enforce that the invited user must register with this exact Discord account.
+        </Typography.Text>
       </Form>
     </Modal>
   );

@@ -1167,9 +1167,11 @@ DECLARE
     _team_member_id UUID;
     _role_id        UUID;
     _email          TEXT;
+    _discord_id     TEXT;
     _output         JSON;
 BEGIN
     _team_id = (_body ->> 'team_id')::UUID;
+    _discord_id = (_body ->> 'discord_id')::TEXT;
 
     IF ((_body ->> 'is_admin')::BOOLEAN IS TRUE)
     THEN
@@ -1183,6 +1185,28 @@ BEGIN
         SELECT insert_job_title((_body ->> 'job_title')::TEXT, _team_id) INTO _job_title_id;
     ELSE
         _job_title_id = NULL;
+    END IF;
+
+    -- Validate Discord ID if provided
+    IF _discord_id IS NOT NULL
+    THEN
+        -- Check format (17-19 digits)
+        IF NOT (_discord_id ~ '^\d{17,19}$')
+        THEN
+            RAISE 'ERROR_INVALID_DISCORD_ID_FORMAT:%', _discord_id;
+        END IF;
+
+        -- Check if Discord ID already exists in users table
+        IF EXISTS(SELECT 1 FROM users WHERE discord_id = _discord_id)
+        THEN
+            RAISE 'ERROR_DISCORD_ID_ALREADY_EXISTS:%', _discord_id;
+        END IF;
+
+        -- Check if Discord ID is already in pending invitations (different team)
+        IF EXISTS(SELECT 1 FROM email_invitations WHERE discord_id = _discord_id AND team_id != _team_id)
+        THEN
+            RAISE 'ERROR_DISCORD_ID_PENDING_INVITATION:%', _discord_id;
+        END IF;
     END IF;
 
     CREATE TEMPORARY TABLE temp_new_team_members (
@@ -1222,8 +1246,8 @@ BEGIN
 --                 RAISE 'ERROR_EMAIL_INVITATION_EXISTS:%', _email;
             END IF;
 
-            INSERT INTO email_invitations(team_id, team_member_id, email, name)
-            VALUES (_team_id, _team_member_id, _email, SPLIT_PART(_email, '@', 1));
+            INSERT INTO email_invitations(team_id, team_member_id, email, name, discord_id)
+            VALUES (_team_id, _team_member_id, _email, SPLIT_PART(_email, '@', 1), _discord_id);
 
             INSERT INTO temp_new_team_members (is_new, team_member_id, team_member_user_id, name, email)
             VALUES ((is_null_or_empty(_user_id)), _team_member_id, _user_id,

@@ -305,16 +305,6 @@ const SignupPage = () => {
         message: t('emailRequired'),
       },
     ],
-    discord_id: [
-      {
-        required: urlParams.teamMemberId ? true : false,
-        message: t('discordIdRequired', {defaultValue: 'Discord ID is required'}),
-      },
-      {
-        pattern: /^\d{17,19}$/,
-        message: t('discordIdPattern', {defaultValue: 'Discord ID must be 17-19 digits'}),
-      },
-    ],
     password: [
       {
         required: true,
@@ -411,22 +401,6 @@ const SignupPage = () => {
             style={{ borderRadius: 4 }}
           />
         </Form.Item>
-
-        {urlParams.teamMemberId && (
-          <Form.Item
-            name="discord_id"
-            label={t('discordIdLabel', {defaultValue: 'Discord User ID'})}
-            rules={formRules.discord_id as Rule[]}
-            tooltip={t('discordIdTooltip', {defaultValue: 'Your Discord User ID (17-19 digits). Right-click your name in Discord and select "Copy User ID"'})}
-          >
-            <Input
-              prefix={<IdcardOutlined />}
-              placeholder={t('discordIdPlaceholder', {defaultValue: 'Enter your Discord User ID'})}
-              size="large"
-              style={{ borderRadius: 4 }}
-            />
-          </Form.Item>
-        )}
 
         <Form.Item
           name="password"
