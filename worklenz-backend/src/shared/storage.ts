@@ -327,7 +327,19 @@ async function createPresignedUrlWithS3Client(key: string, file: string) {
     ResponseContentType: `${contentType}`,
     ResponseContentDisposition: `attachment; filename=${file}`,
   });
-  return getSignedUrl(s3Client, command, { expiresIn: 3600 });
+
+  let presignedUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+
+  // Replace internal MinIO endpoint with public URL for browser access
+  // This fixes the issue where presigned URLs contain http://minio:9000 instead of the public domain
+  if (S3_ENDPOINT && S3_URL) {
+    const internalEndpoint = getEndpointFromUrl(); // e.g., "http://minio:9000"
+    if (internalEndpoint) {
+      presignedUrl = presignedUrl.replace(internalEndpoint, S3_URL);
+    }
+  }
+
+  return presignedUrl;
 }
 
 async function createPresignedUrlWithAzureClient(key: string, file: string) {
